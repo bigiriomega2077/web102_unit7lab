@@ -1,25 +1,52 @@
-import { useState } from 'react'
-import './Card.css'
-import more from './more.png'
+import React, { useState } from 'react'
+import { supabase } from '../client'
 import { Link } from 'react-router-dom'
+import './Card.css'
 
+const Card = (props) => {
+    // Initialize count with the betCount from database, default to 0
+    const [count, setCount] = useState(props.betCount || 0)
 
-const Card = (props) =>  {
+    // UPDATE bet count function
+    const updateCount = async (event) => {
+        event.preventDefault();
+        
+        try {
+            // Update the database - increment betCount by 1
+            const { error } = await supabase
+                .from('Posts')
+                .update({ betCount: count + 1 })
+                .eq('id', props.id);
+            
+            if (error) {
+                console.error('Error updating bet count:', error);
+                return;
+            }
+            
+            // Update the local state only if database update was successful
+            setCount(count + 1);
+        } catch (err) {
+            console.error('Error in updateCount:', err);
+        }
+    }
 
-  const [count, setCount] = useState(0)
-  const updateCount = () => {
-    setCount((count) => count + 1)
-  }
-
-  return (
-      <div className="Card">
-          <Link to={'edit/'+ props.id}><img className="moreButton" alt="edit button" src={more} /></Link>
-          <h2 className="title">{props.title}</h2>
-          <h3 className="author">{"by " + props.author}</h3>
-          <p className="description">{props.description}</p>
-          <button className="betButton" onClick={updateCount} >👍 Bet Count: {count}</button>
-      </div>
-  );
-};
+    return (
+        <div className="Card">
+            <h2>{props.title}</h2>
+            <h3>by {props.author}</h3>
+            <p>{props.description}</p>
+            
+            <div className="card-actions">
+                <button className="betButton" onClick={updateCount}>
+                    👍 Bet ({count})
+                </button>
+                
+                <Link to={`/edit/${props.id}`}>
+                    <button className="editButton">⋮</button>
+                </Link>
+            </div>
+        </div>
+    )
+}
 
 export default Card
